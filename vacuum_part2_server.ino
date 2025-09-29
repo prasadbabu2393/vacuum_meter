@@ -37,7 +37,7 @@ const char CALIBRATION_PAGE[] PROGMEM = R"rawliteral(
 
     <div class="sensor-card">
         <h2>Sensor 1</h2>
-        <div class="live-data">Live Voltage: <span id="v1">--.--</span> V</div>
+        <div class="live-data">Live Voltage: <span id="v1">--.--</span> mV</div>
         <div class="buttons">
             <button onclick="calibrate('set_min_1')">Set Minimum (0.001 mBar)</button>
             <button onclick="calibrate('set_max_1')">Set Maximum (1000 mBar)</button>
@@ -46,7 +46,7 @@ const char CALIBRATION_PAGE[] PROGMEM = R"rawliteral(
 
     <div class="sensor-card">
         <h2>Sensor 2</h2>
-        <div class="live-data">Live Voltage: <span id="v2">--.--</span> V</div>
+        <div class="live-data">Live Voltage: <span id="v2">--.--</span> mV</div>
         <div class="buttons">
             <button onclick="calibrate('set_min_2')">Set Minimum (0.001 mBar)</button>
             <button onclick="calibrate('set_max_2')">Set Maximum (1000 mBar)</button>

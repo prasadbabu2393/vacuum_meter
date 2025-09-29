@@ -25,16 +25,17 @@ HardwareSerial uart2(2); // For Modbus
 
 // Pin definitions
 #define BTN_INC  34
+
 #define BTN_DEC  35
 #define BTN_TOGGLE 14
 #define relay1 27
 #define relay2 23
 
 // LED pins
-#define LED_MBA  4
+#define LED_MBA  13
 #define LED_TORR 5
-#define LED_PA   13
-#define LED_RELAY1 25
+#define LED_PA   25
+#define LED_RELAY1 4
 #define LED_RELAY2 26
 
 // Modbus pins
@@ -64,7 +65,7 @@ bool softAPMode = false;
 bool updateInProgress = false;
 
 // Sampling variables
-int num_samples = 3;
+int num_samples = 10;
 #define MAX_SAMPLES 20
 float voltage1_buffer[MAX_SAMPLES] = {0};
 float voltage2_buffer[MAX_SAMPLES] = {0};
@@ -76,7 +77,7 @@ enum UnitType { UNIT_MBA, UNIT_TORR, UNIT_PA };
 UnitType currentUnit = UNIT_MBA;
 UnitType tempUnit = currentUnit;
 // Conversion factors
-const float MBAR_TO_TORR = 0.750062;
+const float MBAR_TO_TORR = 0.75; // 0.750062;
 const float MBAR_TO_PA = 100.0;
 // Settings modes
 const char* modes[] = {"HL-1", "LL-1", "HL-2", "LL-2", "Unit"};
@@ -169,8 +170,9 @@ const struct {
     {1041.500f, 4.000000f}, {1045.000f, 5.000000f}, {1049.000f, 6.000000f}, {1054.000f, 7.000000f},
     {1060.100f, 8.000000f}, {1066.000f, 9.000000f}, {1071.000f, 10.000000f}, {1075.750f, 20.000000f},
     {1076.275f, 30.000000f}, {1078.800f, 40.000000f}, {1079.500f, 50.000000f}, {1080.000f, 60.000000f},
-    {1081.500f, 70.000000f}, {1082.000f, 80.000000f}, {1084.800f, 100.000000f}, {1085.300f, 500.000000f},
-    {1086.000f, 1000.000000f}
+    {1081.500f, 70.000000f}, {1082.000f, 80.000000f}, 
+    //{1084.800f, 100.000000f}, {1086.300f, 500.000000f},
+    {1088.000f, 1000.000000f}
 };
 const int TABLE_SIZE = sizeof(voltageToVacuumTable) / sizeof(voltageToVacuumTable[0]);
 
@@ -196,6 +198,37 @@ void connectToWiFi();
 void startSoftAP();
 void readWiFiSettings();
 void saveWiFiSettings(String ssid, String password, String ip, String gateway, String subnet);
+
+void reset_button() {
+    // Static variable to track the start time of a button press.
+    // 'static' ensures this variable retains its value across multiple calls.
+    static unsigned long buttonPressStartTime = 0;
+
+    // Check if the BTN_INC button is currently being pressed (LOW signal).
+    if (digitalRead(BTN_INC) == LOW) {
+        // If this is the beginning of the press, record the start time.
+        if (buttonPressStartTime == 0) {
+            buttonPressStartTime = millis();
+        }
+        
+        // If the button has been held continuously for over 3000 milliseconds...
+        if (millis() - buttonPressStartTime > 3000) {
+            Serial.println("WiFi reset button held for 3 seconds - clearing WiFi credentials.");
+            
+            // Open preferences in read-write mode and clear all WiFi settings.
+            preferences.begin("wifi", false);
+            preferences.clear();
+            preferences.end();
+
+            Serial.println("WiFi credentials cleared. Restarting...");
+            delay(100); // Short delay to ensure the serial message sends.
+            ESP.restart();
+        }
+    } else {
+        // If the button is released, reset the timer.
+        buttonPressStartTime = 0;
+    }
+}
 
 
 void setup() {
@@ -361,6 +394,8 @@ void loop() {
             }
         }
     }
+    if(!settingsMode) { reset_button(); } //reset button for clearing the wifi details 
+    
 
     // Relay & LED control
     digitalWrite(relay1, (vacuum1 < LL1 && vacuum1 > HL1));
@@ -384,6 +419,7 @@ void loop() {
                       ",\"baudrate\":" + String(modbus_baudrate) + "}";
         webSocket.broadcastTXT(json);
     }
+    delay(50);
 }
 
 
@@ -513,8 +549,8 @@ void adcReadings_fun() {
     voltage_3 = sum3 / num_samples;
     voltage_4 = sum4 / num_samples;
 
-    voltage_diff1 = voltage_1 - voltage_2;
-    voltage_diff2 = voltage_3 - voltage_4;
+    voltage_diff1 = voltage_2 - voltage_1;
+    voltage_diff2 = voltage_4 - voltage_3;
     
     float threshold1 = getDynamicThreshold();
     float threshold2 = getDynamicThreshold2();
@@ -651,6 +687,7 @@ void loadAllSettings() {
 }
 
 void saveUnitSettings() { preferences.begin("vac_meter", false); preferences.putInt("unit", currentUnit); preferences.end(); }
+
 void saveVacuumSettings() {
     preferences.begin("vac_meter", false);
     preferences.putFloat("hl1", floatValues[0]);
