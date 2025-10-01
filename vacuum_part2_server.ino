@@ -2,12 +2,66 @@
 // OPTIMIZED: Removed dead code and added OTA authentication.
 
 // Web handler function prototypes
-void handleConfig();
+void handleConfig();  //01-10-25
 void handleSave();
 void handleSystemConfig();
 void handleSystemSave();
 void handleOTAPage();
 void handleUpdate();
+
+//---------------------
+// void handleThresholdConfig() {
+//     String html = R"HTML(
+// <!DOCTYPE html><html><head><title>Threshold Config</title>
+// <meta name="viewport" content="width=device-width, initial-scale=1">
+// <style>body{font-family:sans-serif;background:#f4f4f4;margin:20px;}.container{max-width:600px;margin:auto;background:white;padding:20px;border-radius:8px;box-shadow:0 0 10px rgba(0,0,0,0.1);}h1,h3{text-align:center;}input{width:100%;padding:10px;margin:10px 0;border-radius:4px;border:1px solid #ddd;box-sizing:border-box;}button{width:100%;background:#007bff;color:white;padding:12px;border:none;border-radius:4px;cursor:pointer;}button:hover{background:#0056b3;}.sensor-group{border:1px solid #ddd;padding:15px;margin:10px 0;border-radius:5px;}.nav a{text-decoration: none; color: #007bff;}.nav{text-align:center; margin-top: 15px;}</style>
+// </head><body><div class="container"><h1>Threshold Configuration</h1>
+// <form action="/threshold-save" method="post">
+// <div class="sensor-group">
+// <h3>Sensor 1 Thresholds</h3>
+// <label>High Limit 1 (HL1) - mBar:</label>
+// <input type="number" name="hl1" value=")HTML" + String(HL1, 6) + R"HTML(" step="0.000001" min="0.000001" max="1000">
+// <label>Low Limit 1 (LL1) - mBar:</label>
+// <input type="number" name="ll1" value=")HTML" + String(LL1, 6) + R"HTML(" step="0.000001" min="0.000001" max="1000">
+// </div>
+// <div class="sensor-group">
+// <h3>Sensor 2 Thresholds</h3>
+// <label>High Limit 2 (HL2) - mBar:</label>
+// <input type="number" name="hl2" value=")HTML" + String(HL2, 6) + R"HTML(" step="0.000001" min="0.000001" max="1000">
+// <label>Low Limit 2 (LL2) - mBar:</label>
+// <input type="number" name="ll2" value=")HTML" + String(LL2, 6) + R"HTML(" step="0.000001" min="0.000001" max="1000">
+// </div>
+// <button type="submit">Save Thresholds</button></form>
+// <div class="nav"><a href="/">Back to Calibration</a></div>
+// </div></body></html>
+// )HTML";
+//     server.send(200, "text/html", html);
+// }
+
+
+// void handleThresholdSave() {
+//     if (server.hasArg("hl1")) { HL1 = server.arg("hl1").toFloat(); }
+//     if (server.hasArg("ll1")) { LL1 = server.arg("ll1").toFloat(); }
+//     if (server.hasArg("hl2")) { HL2 = server.arg("hl2").toFloat(); }
+//     if (server.hasArg("ll2")) { LL2 = server.arg("ll2").toFloat(); }
+    
+//     // Update floatValues array to keep sync
+//     floatValues[0] = HL1;
+//     floatValues[1] = LL1;
+//     floatValues[2] = HL2;
+//     floatValues[3] = LL2;
+    
+//     // Save to flash
+//     preferences.begin("vac_meter", false);
+//     preferences.putFloat("hl1", HL1);
+//     preferences.putFloat("ll1", LL1);
+//     preferences.putFloat("hl2", HL2);
+//     preferences.putFloat("ll2", LL2);
+//     preferences.end();
+    
+//     server.send(200, "text/html", "Thresholds saved successfully! <a href='/thresholds'>Back</a>");
+// }
+//-------------------------------------
 
 const char CALIBRATION_PAGE[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
@@ -145,8 +199,11 @@ void setupWebServer() {
     
     server.on("/calibration", HTTP_GET, handleCalibrationPage);
     server.on("/calibrate", HTTP_POST, handleCalibrate);
+    // Add these two lines in setupWebServer() function
+    // server.on("/thresholds", HTTP_GET, handleThresholdConfig);
+    // server.on("/threshold-save", HTTP_POST, handleThresholdSave);
     
-    server.begin();
+    server.begin(); 
     webSocket.begin();
     webSocket.onEvent([](uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
         if (type == WStype_DISCONNECTED) {

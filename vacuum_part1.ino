@@ -3,7 +3,7 @@
 // OPTIMIZED for performance and stability, with exponential display and secure OTA.
 // FIXED Watchdog Timer initialization for newer ESP32 Core versions.
 
-#include <TM1637Display.h>
+#include <TM1637Display.h>  //01-10-25
 #include <Preferences.h>
 #include <WiFi.h>
 #include <WebServer.h>
@@ -42,12 +42,12 @@ HardwareSerial uart2(2); // For Modbus
 #define RE1 12  // RS485 Direction control
 
 // Voltage range shifting
-float current_min_voltage = -13.0f;
-float current_max_voltage = 1000.0f;
-float current_min_voltage_2 = -13.0f;
-float current_max_voltage_2 = 1000.0f;
-const float ORIGINAL_MIN_VOLTAGE = -13.0f;
-const float ORIGINAL_MAX_VOLTAGE = 995.0f;
+float current_min_voltage = 76.0f;
+float current_max_voltage = 1093.0f;
+float current_min_voltage_2 = 4.0f;
+float current_max_voltage_2 = 1054.0f;
+const float ORIGINAL_MIN_VOLTAGE = 172.03f;  //-13.0f;
+const float ORIGINAL_MAX_VOLTAGE = 1088.0f; ///995.0f;
 
 // WiFi Configuration
 String softAP_SSID = "Vacuum_meter#01";
@@ -398,8 +398,12 @@ void loop() {
     
 
     // Relay & LED control
-    digitalWrite(relay1, (vacuum1 < LL1 && vacuum1 > HL1));
-    digitalWrite(relay2, (vacuum2 < LL2 && vacuum2 > HL2));
+    // digitalWrite(relay1, (vacuum1 < LL1 && vacuum1 > HL1)); //hl1 on and ll1 = off
+    // digitalWrite(relay2, (vacuum2 < LL2 && vacuum2 > HL2));
+    if(vacuum1 <= HL1){digitalWrite(relay1, HIGH); }
+    if(vacuum1 >= LL1){digitalWrite(relay1, LOW); }
+    if(vacuum2 <= HL2){digitalWrite(relay2, HIGH); }
+    if(vacuum2 >= LL2){digitalWrite(relay2, LOW); }
     digitalWrite(LED_RELAY1, digitalRead(relay1));
     digitalWrite(LED_RELAY2, digitalRead(relay2));
     digitalWrite(LED_MBA, (currentUnit == UNIT_MBA));
@@ -412,6 +416,8 @@ void loop() {
         String vacuum1_str = (voltage_diff1 <= -100 || voltage_diff1 > 1200) ? "\"FAIL\"" : String(convertToSelectedUnit(vacuum1, currentUnit), 6);
         String vacuum2_str = (voltage_diff2 <= -100 || voltage_diff2 > 1200) ? "\"FAIL\"" : String(convertToSelectedUnit(vacuum2, currentUnit), 6);
         
+        if(vacuum1_str == "FAIL"){digitalWrite(relay1, LOW); }
+        if(vacuum2_str == "FAIL"){digitalWrite(relay2, LOW); }
         String json = "{\"vacuum1\":" + vacuum1_str + 
                       ",\"vacuum2\":" + vacuum2_str + 
                       ",\"voltage_diff1\":" + String(voltage_diff1, 2) + 
